@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>きこえ方の体験 ─ ノイズボコーダ</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">CI MUSIC LAB / TOOL A</p>
+        <h1>スペクトル情報が少ないと、<br />音楽はどう聞こえる？</h1>
+        <p class="lead">
+          音を少数の周波数帯（チャネル）に分け、各帯域の「大きさの変化」だけで鳴らし直す
+          <strong>ノイズボコーダ</strong>で、聞き比べができます。
+        </p>
+      </header>
+
+      <aside class="notice">
+        <p>
+          ⚠ これは正常聴力者に向けた<strong>近似</strong>で、人工内耳を使う人の実際の聞こえ方そのものではありません。
+          下の「このツールの限界」もあわせて読んでください。
+        </p>
+        <p>🎧 ヘッドホンで聞くときは、<strong>小さめの音量から</strong>始めてください。</p>
+      </aside>
+
+      <section class="panel">
+        <div class="row sources">
+          <button id="btn-demo" class="btn">♪ デモ曲（きらきら星）</button>
+          <label class="btn ghost">
+            自分の音声ファイルを開く
+            <input id="file" type="file" accept="audio/*" hidden />
+          </label>
+          <span id="source-name" class="muted">音源が選ばれていません</span>
+        </div>
+        <p class="muted small">ファイルはブラウザの中だけで処理され、どこにも送信されません。</p>
+
+        <div class="row transport">
+          <button id="btn-play" class="btn primary" disabled>▶ 再生</button>
+          <button id="btn-ab" class="btn toggle" disabled aria-pressed="false">原音に切り替え</button>
+          <span id="mode-label" class="mode">ボコーダ</span>
+        </div>
+
+        <div class="channels">
+          <div class="channels-head">
+            <label for="ch">チャネル数</label>
+            <output id="ch-value">8</output>
+          </div>
+          <input id="ch" type="range" min="1" max="22" step="1" value="8" />
+          <div class="presets">
+            <button data-ch="2">2</button>
+            <button data-ch="4">4</button>
+            <button data-ch="8">8</button>
+            <button data-ch="12">12</button>
+            <button data-ch="16">16</button>
+            <button data-ch="22">22</button>
+          </div>
+          <p class="muted small">人工内耳は通常 12〜22 程度のチャネルで情報を送るとされています（Tahmasebi ら, 2020）。</p>
+        </div>
+
+        <div class="row">
+          <label for="vol">音量</label>
+          <input id="vol" type="range" min="0" max="1" step="0.01" value="0.4" />
+        </div>
+
+        <details>
+          <summary>詳細設定</summary>
+          <div class="row">
+            <label for="carrier">キャリア</label>
+            <select id="carrier">
+              <option value="noise">雑音（ノイズボコーダ）</option>
+              <option value="sine">正弦波（比較用）</option>
+            </select>
+          </div>
+          <div class="row">
+            <label for="env">包絡線の遮断周波数</label>
+            <input id="env" type="range" min="10" max="400" step="5" value="160" />
+            <output id="env-value">160 Hz</output>
+          </div>
+          <p class="muted small">遮断周波数を下げるほど、時間的な細かい変化（音の高さの手がかりの一部）も失われます。</p>
+          <label class="check"><input id="show-edges" type="checkbox" checked /> チャネル境界を表示</label>
+        </details>
+      </section>
+
+      <section class="viz">
+        <div class="spec-wrap">
+          <canvas id="spec"></canvas>
+          <canvas id="spec-overlay"></canvas>
+        </div>
+        <p class="muted small">
+          いま聞こえている音のスペクトログラム（縦軸：周波数［Hz］、右端が現在）。
+          チャネル数を減らすと、倍音の細い縞が消えて帯状になります。リズムの縦線は残りやすいことにも注目してください。
+        </p>
+      </section>
+
+      <section class="about">
+        <h2>しくみ</h2>
+        <ol>
+          <li>音を帯域通過フィルタで <em>N</em> 個の周波数帯に分ける（境界は蝸牛上で等間隔になる Greenwood 関数で決める）</li>
+          <li>各帯域の振幅の包絡線（大きさの時間変化）を取り出す</li>
+          <li>同じ帯域に絞った雑音を、その包絡線で変調して足し合わせる</li>
+        </ol>
+        <p>
+          その結果、各帯域の「大きさの変化」は残りますが、帯域内の細かい周波数構造（倍音・音の高さ）は失われます。
+          Shannon ら (1995) が人工内耳の処理を模す方法として用いた手法です。
+        </p>
+
+        <h2>このツールの限界</h2>
+        <ul>
+          <li>正常聴力者に向けた近似であり、人工内耳を使う人の実際の聞こえ方そのものではありません。</li>
+          <li>正常聴力者によるシミュレーションは、使用者の成績の「上限に近い状況」として扱われることがあり、そのまま当てはめることはできません。</li>
+          <li>電流の広がり・チャネル間の干渉、電極の挿入位置による周波数のずれ、埋め込み期間や聴力喪失の原因などの個人差、機器ごとの処理の違いは再現していません。</li>
+          <li>音量はチャネル数に関係なく原音とそろうよう自動調整しています。</li>
+        </ul>
+
+        <h2>参考文献</h2>
+        <ul class="refs">
+          <li>Shannon RV, et al. Speech recognition with primarily temporal cues. <i>Science</i>. 1995;270:303–304.</li>
+          <li>Greenwood DD. A cochlear frequency-position function for several species—29 years later. <i>J Acoust Soc Am</i>. 1990;87(6):2592–2605.</li>
+          <li>Tahmasebi S, Gajęcki T, Nogueira W. Design and evaluation of a real-time audio source separation algorithm to remix music for cochlear implant users. <i>Front Neurosci</i>. 2020;14:434.</li>
+        </ul>
+      </section>
+
+      <footer class="muted small">
+        キーボード：<kbd>Space</kbd> 再生/停止　<kbd>A</kbd> 原音と切り替え　<kbd>←</kbd><kbd>→</kbd> チャネル数
+      </footer>
+    </main>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
